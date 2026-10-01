@@ -33,7 +33,9 @@ In the Linux terminal, navigate to the dataset directory and import the shelter 
 ```bash
 mongoimport --type=csv --headerline --db aac --collection animals --drop ./aac_shelter_outcomes.csv
 ```
-<img src="./readme_assets/mongoimport.png">
+<img src="./readme_assets/1.png">
+
+---
 
 ### 2. User Authentication Setup: 
 Launch mongosh, switch to the admin database, and configure an authenticated user account (`aacuser`) with read and write permissions scoped specifically to the aac database:
@@ -47,7 +49,7 @@ db.createUser({
   roles: [ { role: "readWrite", db: "aac" } ] 
 })
 ```
-Verify Authentication within the shell:
+Verify Authentication within the shell: (after clearing the console or opening a new console)
 ```bash
 use aac
 ```
@@ -55,7 +57,78 @@ use aac
 db.auth("aacuser", "<YourSecurePassword>")
 ```
 
-<img src="./readme_assets/configureauth.png">
+<img src="./readme_assets/2.png">
 
+---
 
+### 3. Module Connection Initialization: 
+Update the connection string within the ```__init__``` constructor of ```AnimalShelter``` in ```CRUD_Python_Module.py``` with your assigned password to authenticate URI connectivity. Verify the string represents your username and password created in previous steps: 
+```python
+class AnimalShelter(object): 
+    """ CRUD operations for Animal collection in MongoDB """ 
 
+    def __init__(self): 
+        # Initializing the MongoClient. This helps to access the MongoDB 
+        # databases and collections. This is hard-wired to use the aac 
+        # database, the animals collection, and the aac user. 
+        # 
+        # You must edit the password below for your environment. 
+        # 
+        # Connection Variables 
+        # 
+        USER = 'aacuser' 
+        PASS = 'I<3mongo' 
+        HOST = 'localhost' 
+        PORT = 27017 
+        DB = 'aac' 
+        COL = 'animals' 
+        # 
+        # Initialize Connection 
+        # 
+        self.client = MongoClient('mongodb://%s:%s@%s:%d' % (USER, PASS, HOST, PORT)) 
+        self.database = self.client['%s' % (DB)] 
+        self.collection = self.database['%s' % (COL)] 
+```
+
+## Implementation Details & Working Functionality:
+### Method Specifications (create, read, update, delete)
+The AnimalShelter class encapsulates the full CRUD lifecycle using defensive programming practices and PEP8 conventions:
+-	```create(data: dict) -> bool```:
+    -	Functionality: Inserts a single record into the ```animals``` collection using ```collection.insert_one()```.
+    -	Defensive Guard Clauses: Verifies that ```data``` is a non-empty dictionary. Returns ```True``` if acknowledged by MongoDB, or ```False``` if validation fails or an exception occurs (e.g., duplicate ```_id```).
+-	```read(query: dict) -> list```:
+    -	Functionality: Queries the collection using ```collection.find(query)``` and exhaustively unrolls the PyMongo cursor into a native Python list.
+    -	Defensive Guard Clauses: Validates that ```query``` is a dictionary (accepting ```{}``` to perform wildcard searches across all records). Returns an empty list ```[]``` on invalid inputs or database read failures.
+-	```update(query: dict, update_data: dict) -> int```:
+    -	Functionality: Modifies matching records using ```collection.update_many()```.
+    -	Defensive Guard Clauses & Operator Support: Ensures both arguments are valid dictionaries and that ```update_data``` is non-empty. Inspects payload keys; if raw fields are passed without atomic MongoDB operators (e.g., ```{"name": "Baratheon"}```), the method automatically encapsulates them in ```{"$set": update_data}```. Returns ```modified_count``` on success, or ```0``` on invalid input or failure.
+-	```delete(query: dict) -> int```:
+    -	Functionality: Removes matching records using ```collection.find(query)```.
+    -	Defensive Guard Clauses: Requires that ```query``` is a non-empty dictionary. Passing an empty dictionary ```{}``` returns ```0``` immediately, preventing catastrophic, unauthorized collection-wide deletions. Returns ```deleted_count``` on success, or ```0``` on failure.
+
+### Key Challenges & Overcome Solutions
+1.	Handling PyMongo Cursor Objects: In early iterations, querying records with ```find()``` returned an unexhausted PyMongo cursor rather than a native list. Attempting to evaluate document length or index records directly caused runtime errors. This was resolved by explicitly unrolling the cursor using ```list(cursor)``` before returning results from the read method.
+2.	Silent Exception Handling & Return Types: Primary key collisions (MongoDB error code ```11000```) and malformed queries previously risked terminating runtime scripts. Wrapping operations in ```try/except Exception as e:``` blocks ensures exceptions are logged to stdout while returning clean, typed fallback values (```False```, ```[]```, or ```0```) to calling services.
+3.	Data Loss Prevention in Deletion: In MongoDB, ```delete_many({})``` wipes an entire collection. Adding the guard clause ```if isinstance(query, dict) and query:``` explicitly prevents accidental full collection purges.
+
+## Functional Operations & Demonstration
+The operational capabilities of the AnimalShelter CRUD module were validated inside a Jupyter Notebook environment using two distinct testing tiers: the baseline required sequential end-to-end integration test script, followed by an expanded automated unit testing suite. 
+
+### End-to-End Functional Test Script (ProjectOneTestScript.ipynb)
+To satisfy the project requirements, a sequential demonstration script was developed and executed against the live Austin Animal Center MongoDB collection. This script authenticates as aacuser, initializes an instance of AnimalShelter, and systematically drives an individual animal record through its full database lifecycle: insertion (Create), query verification (Read), attribute modification (Update), and document removal (Delete).
+
+#### Code Execution
+To execute this functional demonstration, the following sequential operations are carried out:
+1.	Import and Initialization
+The AnimalShelter class is imported from the custom module and instantiated to establish authenticated connectivity to the aac database and animals collection:
+
+#### Execution Output Trace
+
+## Extended Verification: Automated unittest Suite
+### Test Matrix Summary
+### Test Suite Code
+### Test Execution Results
+
+## Future Roadmap
+
+## Contact
