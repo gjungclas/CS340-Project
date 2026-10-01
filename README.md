@@ -206,6 +206,7 @@ Test isolation is maintained through class-level and method-level test fixtures.
 
 ### Test Execution Results
 Executing the test suite within the Jupyter Notebook environment ran all 14 test cases in 0.345 seconds with zero failures and zero runtime errors, producing and overall status of ```OK```:
+<img src="./readme_assets/4.png">
 
 ---
 
