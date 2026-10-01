@@ -186,6 +186,8 @@ print(f"Verification Read after delete returned {len(post_delete_records)} docum
 ---
 
 #### Execution Output Trace
+Executing the script produced the following output trace, verifying the successful sequential execution of all four CRUD operations:
+<img src="./readme_assets/3.png">
 
 ## Extended Verification: Automated unittest Suite
 ### Test Matrix Summary
