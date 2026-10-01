@@ -190,10 +190,32 @@ Executing the script produced the following output trace, verifying the successf
 <img src="./readme_assets/3.png">
 
 ## Extended Verification: Automated unittest Suite
+While the sequential script fulfilled the formal assignment testing requirements, I chose to build out a formal automated unit test suite using Python’s native unittest library. Having recently completed a software testing and automation course, I wanted to apply structured verification methodologies—such as fixture isolation, negative boundary testing, and regression suites—directly to this database tier. This extra testing validates database edge cases, schema variations, payload boundary conditions, and exception-handling routines under isolated conditions
+
 ### Test Matrix Summary
-### Test Suite Code
+The unit test suite consists of 14 distinct test cases organized across all four CRUD operations:
+-	Create Operations (4 tests): Verifies standard single-document insertion acknowledgement, successful handling and traversal of complex nested subdocuments (such as embedded street, city, and state address dictionaries), runtime trapping of duplicate primary key (```_id```) collisions without host process termination, and safe rejection of invalid payloads including ```None```, empty dictionaries (```{}```), strings, and lists.
+-	Read Operations (5 tests): Tests exact-match query retrieval, unconstrained wildcard queries using an empty dictionary (```{}```) to confirm cursor exhaust into populated lists, graceful empty list (```[]```) returns for non-existent primary keys, multi-document batch handling, and safe handling of non-dictionary argument types (returning ```[]``` rather than raising unhandled exceptions).
+-	Update Operations (3 tests): Validates standard field modifications, automatic wrapping of raw dictionary updates into MongoDB’s atomic ```$se```t operator, explicit caller-supplied ```$set``` syntax, and defensive zero-count returns when provided empty or null update payloads.
+-	Delete Operations (2 tests): Confirms the successful removal and verification of specific targeted records, alongside strict verification of safety guard clauses that prevent unconstrained queries (```{}```) or invalid types from triggering unintended collection-wide deletions.
+
+---
+
+### Test Suite Implementation & Isolation Architecture
+Test isolation is maintained through class-level and method-level test fixtures. The ```setUpClass()``` method establishes a single database connection and sets up a dedicated seed document (```TEST_RECORD_9999```). Both ```setUp()``` and ```tearDown()``` execute targeted deletion commands around each test, guaranteeing an isolated database state and preventing stale document collisions across assertions.
+
 ### Test Execution Results
+Executing the test suite within the Jupyter Notebook environment ran all 14 test cases in 0.345 seconds with zero failures and zero runtime errors, producing and overall status of ```OK```:
+
+---
 
 ## Future Roadmap
+With the foundational CRUD data access layer implemented and verified, subsequent milestones will advance this system from a local module into a scalable, production-ready analytics tier:
+- **Plotly Dash Frontend Integration:** Connect the AnimalShelter module directly into an interactive Plotly Dash dashboard. This web application will ingest live MongoDB queries to power dynamic data tables, demographic breakdown charts, statistical outcome visualizations, and geolocation maps showing rescue dog candidates across targeted training categories (such as Disaster Rescue and Water Tracking).
+- **Environment-Based Secret Management:** Refactor the database authentication mechanism within __init__ to load connection strings and sensitive credentials dynamically from environment variables (e.g., using python-dotenv or .env files) rather than static variables, eliminating credential exposure in version control while supporting production deployment security standards.
+- **Dynamic Connection Parameterization:** Update the class constructor to accept configurable host, port, authentication database, and collection parameters upon instantiation, allowing seamless transitions between local testing databases, Docker containers, and remote production MongoDB instances.
+- **RESTful API Service Layer:** Wrap the AnimalShelter class within a modern web framework (such as FastAPI) to expose standardized HTTP endpoints (GET, POST, PUT, DELETE). This will allow external services, mobile clients, and distributed reporting tools to consume Austin Animal Center data securely via JSON over HTTPS.
 
 ## Contact
+Grace Jungclas, MA, AT Ret
+Southern New Hampshire University
