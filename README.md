@@ -219,4 +219,5 @@ With the foundational CRUD data access layer implemented and verified, subsequen
 
 ## Contact
 Grace Jungclas, MA, AT Ret
+
 Southern New Hampshire University
