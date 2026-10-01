@@ -106,6 +106,8 @@ The AnimalShelter class encapsulates the full CRUD lifecycle using defensive pro
     -	Functionality: Removes matching records using ```collection.find(query)```.
     -	Defensive Guard Clauses: Requires that ```query``` is a non-empty dictionary. Passing an empty dictionary ```{}``` returns ```0``` immediately, preventing catastrophic, unauthorized collection-wide deletions. Returns ```deleted_count``` on success, or ```0``` on failure.
 
+---
+
 ### Key Challenges & Overcome Solutions
 1.	Handling PyMongo Cursor Objects: In early iterations, querying records with ```find()``` returned an unexhausted PyMongo cursor rather than a native list. Attempting to evaluate document length or index records directly caused runtime errors. This was resolved by explicitly unrolling the cursor using ```list(cursor)``` before returning results from the read method.
 2.	Silent Exception Handling & Return Types: Primary key collisions (MongoDB error code ```11000```) and malformed queries previously risked terminating runtime scripts. Wrapping operations in ```try/except Exception as e:``` blocks ensures exceptions are logged to stdout while returning clean, typed fallback values (```False```, ```[]```, or ```0```) to calling services.
@@ -117,10 +119,71 @@ The operational capabilities of the AnimalShelter CRUD module were validated ins
 ### End-to-End Functional Test Script (ProjectOneTestScript.ipynb)
 To satisfy the project requirements, a sequential demonstration script was developed and executed against the live Austin Animal Center MongoDB collection. This script authenticates as aacuser, initializes an instance of AnimalShelter, and systematically drives an individual animal record through its full database lifecycle: insertion (Create), query verification (Read), attribute modification (Update), and document removal (Delete).
 
+---
+
 #### Code Execution
 To execute this functional demonstration, the following sequential operations are carried out:
 1.	Import and Initialization
 The AnimalShelter class is imported from the custom module and instantiated to establish authenticated connectivity to the aac database and animals collection:
+```python
+# import CRUD module
+from CRUD_Python_Module import AnimalShelter
+# Instantiate an instance of the class
+shelter = AnimalShelter()
+```
+3.	Create Operation 
+A sample animal record representing a mixed-breed dog named “Renly” is structured as a Python dictionary and submitted to the create() method. The method returns True, verifying database acknowledgement:
+```python
+test_animal = {
+    "name": "Renly",
+    "animal_type": "Dog",
+    "breed": "Mixed",
+    "color": "Brindle",
+    "outcome_type": "Adoption"
+}
+
+create_success = shelter.create(test_animal)
+print(f"Created successful: {create_success}")
+```
+4.	Read Operation
+The database is queried using the lookup criteria {“name”: “Renly”}. The read() method exhausts the PyMongo cursor into a native Python list, confirming persistence in MongoDB and returning its generated _id alongside all record fields:
+```python
+query_read = {"name": "Renly"}
+read_results = shelter.read(query_read)
+
+print(f"C[R]UD- READ returned {len(read_results)} document(s).")
+for doc in read_results:
+    print(doc)
+```
+5.	Update Operation 
+The record is targeted by its original name attribute and modified, changing the animal’s name to “Baratheon”. The update() method wraps raw dictionary updates into MongoDB’s atomic $set operator, executes update_many(), and returns a modified count of 1. An immediate follow-up read operations verifies that the document’s name updated under the exact same _id:
+```python
+update_filter = {"name": "Renly"}
+update_data = {"name": "Baratheon"}
+
+modified_count = shelter.update(update_filter, update_data)
+print(f"CR[U]D- UPDATE modified {modified_count} document(s).")
+
+# Verify record update via read
+updated_records = shelter.read({"name": "Baratheon"})
+print(f"Verification Read returned {len(updated_records)} document(s).")
+for doc in updated_records:
+    print(doc)
+```
+7.	Delete Operation 
+The modified record is targeted using the filter {“name”: “Baratheon”} and removed via delete(). The method executes delete_many() after validating that the query dictionary is non-empty, successfully returning a deleted count of 1. A subsequent verification read confirms that 0 matching records remain, proving successful removal:
+```python
+delete_filter = {"name": "Baratheon"}
+
+deleted_count = shelter.delete(delete_filter)
+print(f"CRU[D]- DELETE removed {deleted_count} document(s).")
+
+# Verify deletion via read (should return 0 documents) 
+post_delete_records = shelter.read(delete_filter)
+print(f"Verification Read after delete returned {len(post_delete_records)} document(s).")
+```
+
+---
 
 #### Execution Output Trace
 
