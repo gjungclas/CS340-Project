@@ -32,3 +32,30 @@ To replicate and configure this project from scratch:
 In the Linux terminal, navigate to the dataset directory and import the shelter outcomes CSV data into MongoDB using `mongoimport`:
 ```bash
 mongoimport --type=csv --headerline --db aac --collection animals --drop ./aac_shelter_outcomes.csv
+```
+<img src="./readme_assets/mongoimport.png">
+
+### 2. User Authentication Setup: 
+Launch mongosh, switch to the admin database, and configure an authenticated user account (`aacuser`) with read and write permissions scoped specifically to the aac database:
+```bash
+use admin
+```
+```bash
+db.createUser({
+  user: "aacuser", 
+  pwd: "<YourSecurePassword>", 
+  roles: [ { role: "readWrite", db: "aac" } ] 
+})
+```
+Verify Authentication within the shell:
+```bash
+use aac
+```
+```bash
+db.auth("aacuser", "<YourSecurePassword>")
+```
+
+<img src="./readme_assets/configureauth.png">
+
+
+
